@@ -1,0 +1,20 @@
+{
+  "name": "Laravel App",
+  "dockerComposeFile": "../compose.yml",
+  "service": "php",
+  "workspaceFolder": "/var/www/laravel-app",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "onecentlin.laravel-blade",
+        "amiralizadeh9480.laravel-extra-intellisense"
+      ],
+      "settings": {
+        "php.validate.executablePath": "/usr/local/bin/php"
+      }
+    }
+  },
+  "forwardPorts": [8080, 8081],
+  "remoteUser": "www-data",
+  "postCreateCommand": "composer install"
+}

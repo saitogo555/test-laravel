@@ -1,0 +1,48 @@
+services:
+  php:
+    build:
+      context: ./php
+      dockerfile: dockerfile
+      args:
+        UID: 1000
+        GID: 1000
+    user: www-data
+    volumes:
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+      - ./php/000-default.conf:/etc/apache2/sites-available/000-default.conf
+      - ./src:/var/www/laravel-app
+    ports:
+      - 8080:80
+    depends_on:
+      - mariadb
+  mariadb:
+    image: mariadb:10.6.18
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: laravel_app
+    volumes:
+      - ./mariadb_data:/var/lib/mysql
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: mariadb
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - 8081:80
+    depends_on:
+      - mariadb
+  mailhog:
+    image: mailhog/mailhog
+    user: root
+    ports:
+      - 8025:8025
+      - 1025:1025
+    environment:
+      MH_STORAGE: maildir 
+      MH_MAILDIR_PATH: /tmp
+    volumes:
+      - ./mailhog_data:/tmp
+
+volumes:
+  mariadb_data:

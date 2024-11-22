@@ -1,0 +1,52 @@
+FROM php:8.3.9-apache
+
+# シェルの設定
+ENV SHELL /bin/bash
+
+# compose.ymlから引数を受け取る
+ARG UID=1000
+ARG GID=1000
+
+# パッケージリストの更新とパッケージのアップグレード
+RUN apt-get update && apt-get upgrade -y
+
+# パッケージのインストール
+RUN apt-get install sudo zip unzip git -y
+
+# PHPの拡張機能をインストール
+RUN docker-php-ext-install pdo pdo_mysql
+
+# entrypoint.shをホストからコンテナにコピー
+COPY entrypoint.sh /entrypoint.sh
+
+# Composerのインストール
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+# RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# mhsendmailのインストール
+RUN curl -sSL https://github.com/mailhog/mhsendmail/releases/download/v0.2.0/mhsendmail_linux_amd64 -o mhsendmail && \
+    chmod +x mhsendmail && \
+    mv mhsendmail /usr/local/bin/mhsendmail && \
+    echo 'sendmail_path = "/usr/local/bin/mhsendmail --smtp-addr=mailhog:1025"' > /usr/local/etc/php/conf.d/sendmail.ini
+
+# Apacheの設定
+RUN a2enmod rewrite
+
+# www-dataのUIDとGIDを設定
+RUN groupmod -g ${UID} www-data && \
+    usermod -u ${GID} www-data
+
+# www-dataユーザーをsudoグループに追加
+RUN usermod -aG sudo www-data
+
+# www-dataユーザーにパスワードなしでsudoを実行する権限を付与
+RUN echo "www-data ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# 作業ディレクトリをプロジェクトルートに設定
+WORKDIR /var/www/laravel-app
+
+# ENTRYPOINTの設定
+ENTRYPOINT [ "/entrypoint.sh" ]
+
+# www-dataに切り替え
+USER www-data
